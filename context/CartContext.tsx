@@ -4,11 +4,13 @@ import { CartItem, CartContextType, Product } from '../types';
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 /**
- * Provider pour gérer l'état global du panier d'achat.
- * Persiste les données dans le localStorage pour conserver le panier au rechargement.
+ * Provider CartProvider
+ * Composant React qui enveloppe l'application pour fournir l'état du panier.
+ * Gère la persistance des données via localStorage.
  */
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialisation depuis le localStorage si disponible
+  // Initialisation de l'état du panier.
+  // On tente de récupérer une sauvegarde locale au démarrage.
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const savedCart = localStorage.getItem('kya-cart');
@@ -19,14 +21,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
 
-  // Sauvegarde dans le localStorage à chaque modification du panier
+  // Effet de bord : Sauvegarde le panier dans le localStorage à chaque modification
   useEffect(() => {
     localStorage.setItem('kya-cart', JSON.stringify(cart));
   }, [cart]);
 
   /**
-   * Ajoute un produit au panier. Si le produit (même ID et même taille) existe déjà,
-   * incrémente simplement la quantité.
+   * Ajoute un produit au panier.
+   * Logique métier :
+   * - Si le produit (même ID et même taille) existe déjà, on incrémente la quantité.
+   * - Sinon, on ajoute une nouvelle entrée.
    */
   const addToCart = (product: Product, size: string) => {
     setCart(prevCart => {
@@ -43,7 +47,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   /**
-   * Retire un article spécifique du panier.
+   * Retire un article du panier.
+   * La suppression se fait sur la combinaison ID + Taille.
    */
   const removeFromCart = (productId: number, size: string) => {
     setCart(prevCart => prevCart.filter(item => !(item.id === productId && item.selectedSize === size)));
@@ -51,6 +56,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   /**
    * Met à jour la quantité d'un article.
+   * Empêche la quantité de descendre en dessous de 1.
    */
   const updateQuantity = (productId: number, size: string, quantity: number) => {
     if (quantity < 1) return;
@@ -63,9 +69,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   };
 
+  /** Vide entièrement le panier */
   const clearCart = () => setCart([]);
 
-  // Calculs dérivés
+  // Calculs dérivés pour l'affichage (évite de stocker ces valeurs dans le state)
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -77,7 +84,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 };
 
 /**
- * Hook personnalisé pour utiliser le contexte du panier.
+ * Hook personnalisé useCart
+ * Permet d'accéder au contexte du panier depuis n'importe quel composant enfant.
+ * Lève une erreur si utilisé hors du CartProvider.
  */
 export const useCart = () => {
   const context = useContext(CartContext);
