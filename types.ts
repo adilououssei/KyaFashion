@@ -1,3 +1,6 @@
+/**
+ * Représente un produit dans le catalogue.
+ */
 export interface Product {
   id: number;
   name: string;
@@ -8,11 +11,17 @@ export interface Product {
   isNew?: boolean;
 }
 
+/**
+ * Représente un article dans le panier, incluant la quantité et la taille choisie.
+ */
 export interface CartItem extends Product {
   quantity: number;
   selectedSize: string;
 }
 
+/**
+ * Définition du contexte du panier pour la gestion d'état globale.
+ */
 export interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product, size: string) => void;
